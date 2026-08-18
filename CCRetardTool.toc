@@ -1,0 +1,13 @@
+## Interface: 120100
+## Title: |cff2eabffCC|r RaidTools Reforged
+## Notes: Suite de raid légère : promotions, invitations, journal, ready check, focus et marqueurs.
+## Author: Eric
+## Version: 2.0.0
+## SavedVariables: CCRaidToolsDB, AutoPromoteDB
+
+Core.lua
+UI.lua
+Automation.lua
+ReadyCheck.lua
+MarksBar.lua
+Focus.lua
