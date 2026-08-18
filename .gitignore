@@ -1,0 +1,23 @@
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local tooling and logs
+.luacheckcache
+*.log
+*.tmp
+*.bak
+
+# Packaged addon output
+.release/
+build/
+dist/
+*.zip

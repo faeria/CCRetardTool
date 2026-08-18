@@ -5,7 +5,7 @@ ns.Core = C
 _G.CCRaidTools = ns
 
 local DB_VERSION = 2
-local PREFIX = "|cff7381ffCC RaidTools|r"
+local PREFIX = "|cff2eabffCC RaidTools|r"
 
 local defaults = {
     version = DB_VERSION,

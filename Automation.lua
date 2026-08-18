@@ -94,18 +94,22 @@ local function HandleWhisper(message, sender)
 end
 
 function module:BuildPanel(parent)
-    local heading = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    heading:SetPoint("TOPLEFT", 8, -8)
-    heading:SetText("Automatisation de raid")
+    local heading = ns.CreatePageHeader(
+        parent,
+        "Automatisation de raid",
+        "Prépare le groupe et le journal sans intervention répétitive.",
+        module.icon
+    )
 
-    local promote = ns.CreateSection(parent, "Promotions", heading, -14)
-    promote:SetHeight(210)
+    local promote = ns.CreateSection(parent, "Promotions automatiques", heading, -10)
+    promote:SetHeight(200)
     local enabled = ns.CreateCheck(promote, "Promouvoir automatiquement les joueurs configurés", promote.heading, ns.db.autoPromote.enabled, function(value) ns.db.autoPromote.enabled = value; CheckPromotions() end)
     local nameLabel = promote:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    nameLabel:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 4, -12)
+    nameLabel:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -10)
     nameLabel:SetText("Joueurs (Nom-Royaume, séparés par des virgules)")
+    nameLabel:SetTextColor(unpack(ns.Theme.muted))
     local names = ns.CreateEditBox(promote, 420)
-    names:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 4, -5)
+    names:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 0, -5)
     local saveNames = ns.CreateButton(promote, "Enregistrer", 105, function()
         wipe(ns.db.autoPromote.names)
         for name in names:GetText():gmatch("[^,;\n]+") do
@@ -117,10 +121,11 @@ function module:BuildPanel(parent)
     end)
     saveNames:SetPoint("LEFT", names, "RIGHT", 8, 0)
     local rankLabel = promote:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    rankLabel:SetPoint("TOPLEFT", names, "BOTTOMLEFT", -4, -12)
+    rankLabel:SetPoint("TOPLEFT", names, "BOTTOMLEFT", 0, -10)
     rankLabel:SetText("Rangs de guilde (noms exacts, séparés par des virgules)")
+    rankLabel:SetTextColor(unpack(ns.Theme.muted))
     local ranks = ns.CreateEditBox(promote, 420)
-    ranks:SetPoint("TOPLEFT", rankLabel, "BOTTOMLEFT", 4, -5)
+    ranks:SetPoint("TOPLEFT", rankLabel, "BOTTOMLEFT", 0, -5)
     local saveRanks = ns.CreateButton(promote, "Enregistrer", 105, function()
         wipe(ns.db.autoPromote.rankNames)
         for rankName in ranks:GetText():gmatch("[^,;\n]+") do
@@ -132,29 +137,38 @@ function module:BuildPanel(parent)
     end)
     saveRanks:SetPoint("LEFT", ranks, "RIGHT", 8, 0)
 
-    local invite = ns.CreateSection(parent, "Invitations par chuchotement", promote, -10)
-    invite:SetHeight(130)
+    local invite = ns.CreateSection(parent, "Invitations par chuchotement", promote, -9)
+    invite:SetHeight(120)
     local inviteEnabled = ns.CreateCheck(invite, "Activer les invitations automatiques", invite.heading, ns.db.invite.enabled, function(value) ns.db.invite.enabled = value end)
     local guildOnly = ns.CreateCheck(invite, "Membres de guilde uniquement", inviteEnabled, ns.db.invite.guildOnly, function(value) ns.db.invite.guildOnly = value end)
+    inviteEnabled:SetWidth(310)
+    guildOnly:SetWidth(310)
+    local keywordLabel = invite:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    keywordLabel:SetPoint("TOPLEFT", 342, -43)
+    keywordLabel:SetText("Mots-clés")
+    keywordLabel:SetTextColor(unpack(ns.Theme.muted))
     local keyword = ns.CreateEditBox(invite, 205)
-    keyword:SetPoint("LEFT", guildOnly, "RIGHT", 185, 0)
+    keyword:SetPoint("TOPLEFT", keywordLabel, "BOTTOMLEFT", 0, -5)
     keyword:SetText(ns.db.invite.keywords)
     keyword:SetScript("OnEnterPressed", function(self) ns.db.invite.keywords = C.Trim(self:GetText()) or "inv"; self:ClearFocus() end)
 
-    local logging = ns.CreateSection(parent, "Journal de combat", invite, -10)
-    logging:SetHeight(145)
+    local logging = ns.CreateSection(parent, "Journal de combat automatique", invite, -9)
+    logging:SetHeight(126)
     local labels = {
         { "LFR", "lfr" }, { "Normal", "normal" }, { "Héroïque", "heroic" },
         { "Mythique", "mythic" }, { "Donjon M0", "dungeonMythic" }, { "Mythique+", "dungeonMythicPlus" },
     }
     local checks = {}
     for index, data in ipairs(labels) do
-        local check = CreateFrame("CheckButton", nil, logging, "UICheckButtonTemplate")
-        check:SetPoint("TOPLEFT", 12 + ((index - 1) % 3) * 175, -38 - math.floor((index - 1) / 3) * 36)
-        check:SetChecked(ns.db.logging[data[2]])
-        check.Text:SetText(data[1])
-        check:SetScript("OnClick", function(self) ns.db.logging[data[2]] = self:GetChecked() and true or false; CheckCombatLog() end)
-        checks[data[2]] = check
+        local label, configKey = data[1], data[2]
+        local check = ns.CreateCheck(logging, label, logging.heading, ns.db.logging[configKey], function(value)
+            ns.db.logging[configKey] = value
+            CheckCombatLog()
+        end)
+        check:ClearAllPoints()
+        check:SetPoint("TOPLEFT", 13 + ((index - 1) % 3) * 184, -39 - math.floor((index - 1) / 3) * 34)
+        check:SetWidth(170)
+        checks[configKey] = check
     end
     refreshPanel = function()
         local list = {}
@@ -165,11 +179,11 @@ function module:BuildPanel(parent)
         for rankName in pairs(ns.db.autoPromote.rankNames) do rankList[#rankList + 1] = rankName end
         table.sort(rankList)
         ranks:SetText(table.concat(rankList, ", "))
-        enabled:SetChecked(ns.db.autoPromote.enabled)
-        inviteEnabled:SetChecked(ns.db.invite.enabled)
-        guildOnly:SetChecked(ns.db.invite.guildOnly)
+        ns.SetCheck(enabled, ns.db.autoPromote.enabled)
+        ns.SetCheck(inviteEnabled, ns.db.invite.enabled)
+        ns.SetCheck(guildOnly, ns.db.invite.guildOnly)
         keyword:SetText(ns.db.invite.keywords)
-        for key, check in pairs(checks) do check:SetChecked(ns.db.logging[key]) end
+        for key, check in pairs(checks) do ns.SetCheck(check, ns.db.logging[key]) end
     end
 end
 
